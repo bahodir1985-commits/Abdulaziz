@@ -3,8 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jaloliddin do'koni Katalogi</title>
-    
+    <title> Jaloliddin do'koni </title>
+
+    <script>
+        // 10 ta ruxsat berilgan maxsus kalit so'zlar
+        const ALLOWED_PASSWORDS = [
+            "MIJOZ1_789",
+            "MIJOZ2_456",
+            "MIJOZ3_123",
+            "MIJOZ4_999",
+            "MIJOZ5_888",
+            "MIJOZ6_777",
+            "MIJOZ7_666",
+            "MIJOZ8_555",
+            "MIJOZ9_444",
+            "MIJOZ10_333"
+        ];
+
+        (function enforceSecurity() {
+            let userKey = localStorage.getItem('app_access_key');
+
+            if (!ALLOWED_PASSWORDS.includes(userKey)) {
+                userKey = prompt("🔒 Katalogga kirish uchun maxsus kalit so'zni kiriting:");
+
+                if (ALLOWED_PASSWORDS.includes(userKey)) {
+                    localStorage.setItem('app_access_key', userKey);
+                } else {
+                    alert("❌ Noto'g'ri kalit so'z! Kirish rad etildi.");
+                    
+                    // Sahifa yuklanishini to'xtatib, kontentni butunlay bloklash
+                    document.addEventListener("DOMContentLoaded", function() {
+                        document.body.innerHTML = `
+                            <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; font-family:sans-serif; background-color:#f4f6f9; text-align:center; padding:20px;">
+                                <div style="background:white; padding:40px; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.1); max-width:400px;">
+                                    <h1 style="color:#e74c3c; margin-bottom:10px;">⚠️ Kirish taqiqlangan</h1>
+                                    <p style="color:#555; font-size:16px; margin-bottom:20px;">Katalogdan foydalanish uchun to'g'ri kalit so'z kiritilmadi.</p>
+                                    <button onclick="location.reload()" style="padding:12px 24px; font-size:16px; font-weight:bold; cursor:pointer; background-color:#3498db; color:white; border:none; border-radius:6px;">Qayta urinish</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    throw new Error("Access Denied");
+                }
+            }
+        })();
+    </script>
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -36,12 +81,6 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        .header .owner-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #f1c40f;
-            margin-bottom: 6px;
-        }
         .header .phone-numbers { 
             font-size: 16px; 
             font-weight: 600; 
@@ -56,6 +95,38 @@
             text-decoration: underline;
         }
         .header p { margin: 0; opacity: 0.85; font-size: 14px; }
+
+        .client-card {
+            background: #ffffff;
+            border: 2px solid #8e44ad;
+            border-radius: 12px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            box-shadow: 0 3px 12px rgba(142, 68, 173, 0.10);
+        }
+        .client-label {
+            font-weight: 700;
+            color: #8e44ad;
+            white-space: nowrap;
+            font-size: 15px;
+        }
+        .client-input {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 13px;
+            border: 1px solid #d5dce0;
+            border-radius: 7px;
+            font-size: 15px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .client-input:focus {
+            border-color: #8e44ad;
+            box-shadow: 0 0 4px rgba(142, 68, 173, 0.4);
+        }
 
         .json-controls {
             display: flex;
@@ -216,12 +287,6 @@
             border-radius: 10px; border: 1px solid var(--border-color); color: #7f8c8d;
         }
 
-        @media (max-width: 600px) {
-            .search-card, .summary-card { flex-direction: column; align-items: stretch; }
-            .summary-values { justify-content: space-between; }
-            .categories-grid { grid-template-columns: 1fr; }
-        }
-
         @media print {
             .json-controls, .search-card, .btn-clear, .btn-action, .btn-add-item {
                 display: none !important;
@@ -244,17 +309,36 @@
                 border: none;
                 background: transparent;
             }
+            .print-hide {
+                display: none !important;
+            }
+            .client-card {
+                border: none;
+                box-shadow: none;
+                padding: 0;
+                margin-bottom: 15px;
+            }
+            .client-input {
+                border: none;
+                background: transparent;
+                font-weight: bold;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="header">
+   <div class="header">
         <h1>Jaloliddin do'koni</h1>
         <div class="phone-numbers">
             📞 <a href="tel:+998999834444">+998 99 983 44 44</a> | <a href="tel:+998999857070">+998 99 985 70 70</a>
         </div>
         <p>Tahrirlanadigan Interaktiv Katalog</p>
+    </div>
+
+    <div class="client-card">
+        <label for="clientNameInput" class="client-label">👤 Mijoz ismi / nomi:</label>
+        <input type="text" id="clientNameInput" class="client-input" placeholder="Mijoz ismini kiriting..." oninput="saveClientName()">
     </div>
 
     <div class="json-controls">
@@ -265,11 +349,12 @@
             Telegramga Jo'natish
         </button>
 
-        <button class="btn-print" onclick="window.print()">🖨️ Chop etish (Pechat)</button>
+        <button class="btn-print" onclick="printSelectedOnly()">🖨️ Chop etish (Pechat)</button>
         <button class="btn-add-cat" onclick="addNewCategory()">➕ Yangi Kategoriya Qo'shish</button>
-        <button class="btn-json" onclick="downloadJSON()">💾 Bazani yuklab olish</button>
-        <button class="btn-json" onclick="document.getElementById('fileInput').click()">📂 Bazani ochish</button>
+        <button class="btn-json" onclick="downloadJSON()">💾 Buyurtmani yuklab olish</button>
+        <button class="btn-json" onclick="document.getElementById('fileInput').click()">📂 Buyurtmani ochish</button>
         <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="uploadJSON(event)">
+        <button class="btn-clear" style="background-color: #7f8c8d;" onclick="logout()">🔒 Chiqish (Parolni tozalash)</button>
     </div>
 
     <div class="search-card">
@@ -300,6 +385,19 @@
         ];
 
         let catalogData = JSON.parse(localStorage.getItem('catalogData')) || defaultCatalog;
+        
+        const savedClientName = localStorage.getItem('clientName') || '';
+        document.getElementById('clientNameInput').value = savedClientName;
+
+        function saveClientName() {
+            const clientName = document.getElementById('clientNameInput').value;
+            localStorage.setItem('clientName', clientName);
+        }
+
+        function logout() {
+            localStorage.removeItem('app_access_key');
+            location.reload();
+        }
 
         function renderCatalog() {
             const container = document.getElementById('catalogContainer');
@@ -351,7 +449,7 @@
                                 <input type="number" min="0" value="${price || ''}" placeholder="0" class="input-box" oninput="updateValue(${catIdx}, ${itemIdx}, 'price', this.value)" onkeydown="handleNavigation(event, this, ${catIdx})">
                             </td>
                             <td>
-                                <input type="number" min="0" value="${count || ''}" placeholder="0" class="input-box" oninput="updateValue(${catIdx}, ${itemIdx}, 'count', this.value)" onkeydown="handleNavigation(event, this, ${catIdx})">
+                                <input type="number" min="0" value="${count || ''}" placeholder="0" class="input-box count-input" oninput="updateValue(${catIdx}, ${itemIdx}, 'count', this.value)" onkeydown="handleNavigation(event, this, ${catIdx})">
                             </td>
                             <td class="row-sum" id="sum_${catIdx}_${itemIdx}">${sum.toLocaleString()}</td>
                             <td>
@@ -381,9 +479,8 @@
             const currentIndex = inputs.indexOf(currentInput);
             if (currentIndex === -1) return;
 
-            event.preventDefault(); // Brauzerning standart harakatini to'xtatish
+            event.preventDefault();
 
-            // ENTER tugmasi: Kataklar bo'ylab birma-bir ketma-ket yurish
             if (key === 'Enter') {
                 if (currentIndex + 1 < inputs.length) {
                     inputs[currentIndex + 1].focus();
@@ -400,28 +497,24 @@
                     }, 50);
                 }
             } 
-            // O'NGGA Strelka
             else if (key === 'ArrowRight') {
                 if (currentIndex + 1 < inputs.length) {
                     inputs[currentIndex + 1].focus();
                     inputs[currentIndex + 1].select();
                 }
             } 
-            // CHAPGA Strelka
             else if (key === 'ArrowLeft') {
                 if (currentIndex - 1 >= 0) {
                     inputs[currentIndex - 1].focus();
                     inputs[currentIndex - 1].select();
                 }
             } 
-            // PASTGA Strelka: Xuddi shu ustundagi pastki katakka o'tish (2 ga sakrash)
             else if (key === 'ArrowDown') {
                 if (currentIndex + 2 < inputs.length) {
                     inputs[currentIndex + 2].focus();
                     inputs[currentIndex + 2].select();
                 }
             } 
-            // TEPAGA Strelka: Xuddi shu ustundagi yuqoridagi katakka o'tish (2 ga qaytish)
             else if (key === 'ArrowUp') {
                 if (currentIndex - 2 >= 0) {
                     inputs[currentIndex - 2].focus();
@@ -508,10 +601,47 @@
             renderCatalog();
         }
 
+        function printSelectedOnly() {
+            const cards = document.querySelectorAll('.category-card');
+            let hasAnySelection = false;
+
+            cards.forEach(card => {
+                const rows = card.querySelectorAll('.product-row');
+                let hasSelectedItemInCard = false;
+
+                rows.forEach(row => {
+                    const countInput = row.querySelector('.count-input');
+                    const count = parseFloat(countInput ? countInput.value : 0) || 0;
+
+                    if (count > 0) {
+                        row.classList.remove('print-hide');
+                        hasSelectedItemInCard = true;
+                        hasAnySelection = true;
+                    } else {
+                        row.classList.add('print-hide');
+                    }
+                });
+
+                if (hasSelectedItemInCard) {
+                    card.classList.remove('print-hide');
+                } else {
+                    card.classList.add('print-hide');
+                }
+            });
+
+            if (!hasAnySelection) {
+                alert("Chop etish uchun kamida bitta mahsulot sonini kiriting!");
+                return;
+            }
+
+            window.print();
+        }
+
         function sendToTelegram() {
             let selectedItems = [];
             let grandTotal = 0;
             let counter = 1;
+            const clientName = document.getElementById('clientNameInput').value.trim();
 
             catalogData.forEach(cat => {
                 cat.items.forEach(item => {
@@ -533,14 +663,18 @@
 
             const today = new Date();
             const dateStr = today.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const timeStr = today.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' });
 
-            let message = `📋 BUYURTMA RO'YXATI\n\n`;
-            message += selectedItems.join("\n");
+            let message = `📋 BUYURTMA RO'YXATI\n`;
+            if (clientName) {
+                message += `👤 Mijoz: ${clientName}\n`;
+            }
+            message += `\n` + selectedItems.join("\n");
             message += `\n\n------------------------`;
             message += `\n💵 Jami: ${grandTotal.toLocaleString()} so'm`;
-            message += `\n📅 Jo'natilgan sana: ${dateStr}.`;
+            message += `\n📅 Sana va vaqt: ${dateStr} ${timeStr}`;
             message += `\n\nJaloliddin do'koni`;
-            message += `\n📞 Tel: +998999834444, +998999857070`;
+            message += `\n📞 Tel: +998 99 983 44 44 | +998 99 985 70 70`;
 
             const encodedMessage = encodeURIComponent(message);
             window.open(`https://t.me/share/url?url=${encodedMessage}`, '_blank');
@@ -551,6 +685,7 @@
         }
 
         function downloadJSON() {
+            const clientName = document.getElementById('clientNameInput').value.trim();
             const jsonString = JSON.stringify(catalogData, null, 4);
             const blob = new Blob([jsonString], { type: "application/json" });
             const url = URL.createObjectURL(blob);
@@ -561,9 +696,12 @@
             const day = String(today.getDate()).padStart(2, '0');
             const hours = String(today.getHours()).padStart(2, '0');
             const minutes = String(today.getMinutes()).padStart(2, '0');
-            const seconds = String(today.getSeconds()).padStart(2, '0');
             
-            const fileName = `baza_${year}-${month}-${day}_${hours}-${minutes}-${seconds}.json`;
+            const datePart = `${year}-${month}-${day}`;
+            const timePart = `${hours}-${minutes}`;
+            
+            const sanitizedClientName = clientName ? clientName.replace(/[/\\?%*:|"<>]/g, '_') : 'Mijoz';
+            const fileName = `buyurtma_${datePart}_${timePart}_${sanitizedClientName}.json`;
 
             const downloadAnchor = document.createElement('a');
             downloadAnchor.href = url;
@@ -583,12 +721,12 @@
                         catalogData = parsedData;
                         saveToLocalStorage();
                         renderCatalog();
-                        alert("Baza muvaffaqiyatli ochildi!");
+                        alert("Buyurtma muvaffaqiyatli ochildi!");
                     } else {
                         alert("Fayl formati noto'g'ri!");
                     }
                 } catch (err) {
-                    alert("Baza faylini o'qishda xatolik ro'y berdi!");
+                    alert("Buyurtma faylini o'qishda xatolik ro'y berdi!");
                 }
             };
             fileReader.readAsText(event.target.files[0]);
@@ -601,27 +739,32 @@
 
             cards.forEach(card => {
                 const rows = card.querySelectorAll('.product-row');
-                let hasVisibleRow = false;
+                let cardHasMatches = false;
 
                 rows.forEach(row => {
-                    const nameUz = row.querySelector('.product-name').innerText.toLowerCase();
-                    if (nameUz.includes(query)) {
+                    const name = row.querySelector('.product-name').innerText.toLowerCase();
+                    if (name.includes(query)) {
                         row.classList.remove('hidden');
-                        hasVisibleRow = true;
+                        cardHasMatches = true;
                         totalVisible++;
                     } else {
                         row.classList.add('hidden');
                     }
                 });
 
-                if (hasVisibleRow) {
+                if (cardHasMatches) {
                     card.classList.remove('hidden');
                 } else {
                     card.classList.add('hidden');
                 }
             });
 
-            document.getElementById('noResults').style.display = totalVisible === 0 ? 'block' : 'none';
+            const noResults = document.getElementById('noResults');
+            if (totalVisible === 0 && query !== '') {
+                noResults.style.display = 'block';
+            } else {
+                noResults.style.display = 'none';
+            }
         }
 
         function clearSearch() {
